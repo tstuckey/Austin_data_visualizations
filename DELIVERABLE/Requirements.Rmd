@@ -1,0 +1,10 @@
+# Requirements
+
+## Foundational Software
+
+R
+
+## R Packages
+- tidyverse: data processing
+- shiny:  web framework 
+- shinythemes: alternate themes

@@ -1,0 +1,10 @@
+name: app2
+title:
+username:
+account: tstuckey3
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3882959
+bundleId: 4409910
+url: https://tstuckey3.shinyapps.io/app2/
+when: 1617072518.21954

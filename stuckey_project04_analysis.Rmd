@@ -1,0 +1,132 @@
+---
+title:  |  
+  | Project 4 data analysis staging
+author: "Tom Stuckey"
+output:
+  pdf_document: 
+    latex_engine: xelatex
+    number_sections: yes 
+    toc: no 
+    fig_caption: yes
+  html_notebook:
+    number_sections: no 
+  word_document: default
+  html_document:
+    df_print: paged
+header-includes: 
+- \usepackage{graphicx}
+- \usepackage{float}
+- \usepackage{array}
+---
+
+```{r, setup, echo=TRUE, warning=FALSE, message=FALSE}
+rm(list=ls())
+library(roxygen2)
+library(tidyverse)
+
+setwd( "./DELIVERABLE/src")
+perf_data <- read_csv("./app1/data/City_of_Austin_Performance_Measures.csv", col_names = TRUE)
+inmate_data <- read_csv("./app2/data/High_Value_Dataset_December_2020.csv", col_names = TRUE)
+row_data <- read_csv("./app3/data/Strategic_Measure_Right_of_Way_Obstructions.csv", col_names = TRUE)
+
+```
+
+```{r, perf_measures, echo=TRUE, warning=FALSE, message=FALSE}
+# Performance Data cleanup
+perf_data$FY <- as.factor(perf_data$FY)
+perf_data$ACTIVITY_NAME <- as.factor(perf_data$ACTIVITY_NAME)
+perf_data$PROGRAM_NAME <- as.factor(perf_data$PROGRAM_NAME)
+perf_data$DEPARTMENT_NAME <- as.factor(perf_data$DEPARTMENT_NAME)
+perf_data$LEVEL_NAME <- as.factor(perf_data$LEVEL_NAME)
+perf_data$MEASURE_TYPE_NAME <- as.factor(perf_data$MEASURE_TYPE_NAME)
+perf_data$FREQUENCY_NAME <- as.factor(perf_data$FREQUENCY_NAME)
+perf_data$KEY_PERFORMANCE <- as.factor(perf_data$KEY_PERFORMANCE)
+perf_data$DASHBOARD_IND <- as.factor(perf_data$DASHBOARD_IND)
+
+cols_to_keep <- c("FY", "ACTIVITY_NAME", "PROGRAM_NAME", "DEPARTMENT_NAME", "LEVEL_NAME", "MEASURE_TYPE_NAME", "FREQUENCY_NAME", "KEY_PERFORMANCE", "DASHBOARD_IND",
+                  "QTR1_CURRENT_YR", "QTR2_CURRENT_YR", "QTR3_CURRENT_YR", "QTR4_CURRENT_YR")
+perf_data <- perf_data %>% select(one_of(cols_to_keep))
+
+
+# Static graphics
+# perf_data <- perf_data %>% filter(DEPARTMENT_NAME == "ANML")
+perf_gp1 <- ggplot2::ggplot(data = perf_data, aes(x = DEPARTMENT_NAME)) 
+perf_gp1 <- perf_gp1 + geom_bar() + ggtitle(cat("Count of Peformance Measures","\n by Dept"))
+perf_gp1 <- perf_gp1 + theme(axis.text.x = element_text(angle = 90, vjust = 0.25, hjust = 1))
+print(perf_gp1)
+
+perf_gp2 <- ggplot2::ggplot(data = perf_data, aes(x = ACTIVITY_NAME)) 
+perf_gp2 <- perf_gp2 + geom_bar() + ggtitle(cat("Count of Performance Measures", "\n by Activity"))
+perf_gp2 <- perf_gp2 + theme(axis.text.x = element_text(angle = 90, vjust = 0.25, hjust = 1))
+print(perf_gp2)
+```
+
+```{r, inmate_info, echo=TRUE, warning=FALSE, message=FALSE}
+# Inmate data cleanup
+inmate_data$`Current Facility` <- as.factor(inmate_data$`Current Facility`)
+inmate_data$Gender <- as.factor(inmate_data$Gender)
+inmate_data$Race <- as.factor(inmate_data$Race)
+inmate_data$County <- as.factor(inmate_data$County)
+inmate_data$`Sentence (Years)` <- as.factor(inmate_data$`Sentence (Years)`)
+inmate_data$`TDCJ Offense` <- as.factor(inmate_data$`TDCJ Offense`)
+
+# Convert dates from characters to POSIX dates 
+inmate_data<- inmate_data %>% dplyr::mutate(`Sentence Date`= strptime(`Sentence Date`, "%m/%d/%Y"))
+inmate_data<- inmate_data %>% dplyr::mutate(`Offense Date`= strptime(`Offense Date`, "%m/%d/%Y"))
+
+# Expand the Race abbreviations
+inmate_data$Race <- dplyr::recode(inmate_data$Race, "A" = "Asian")
+inmate_data$Race <- dplyr::recode(inmate_data$Race, "W" = "White")
+inmate_data$Race <- dplyr::recode(inmate_data$Race, "H" = "Hispanic")
+inmate_data$Race <- dplyr::recode(inmate_data$Race, "B" = "Black")
+inmate_data$Race <- dplyr::recode(inmate_data$Race, "I" = "Indian")
+inmate_data$Race <- dplyr::recode(inmate_data$Race, "O" = "Other")
+inmate_data$Race <- dplyr::recode(inmate_data$Race, "U" = "Unknown")
+
+cols_to_keep <- c("Current Facility", "Gender", "Race", "Age", "County", "Sentence (Years)","TDCJ Offense","Sentence Date","Offense Date")
+inmate_data <- inmate_data %>% select(one_of(cols_to_keep))
+inmate_data <- inmate_data %>% dplyr::relocate("Offense Date", .before = "Sentence Date")
+
+date1 <- as.Date("2017-01-01")
+date2 <- as.Date("2018-12-31")
+
+# inmate_data <- inmate_data %>% dplyr::filter(`Offense Date` > date1 & `Offense Date` < date2)
+
+# Filter by M/F 
+
+inmate_gp <- ggplot(data = inmate_data, aes(x = Age, fill = Race))
+inmate_gp <- inmate_gp + geom_bar() + labs(title = paste("Inmate Distribution by Age between", date1, "and", date2)) 
+print(inmate_gp)
+
+```
+
+
+```{r,right_of_way, echo=TRUE, warning=FALSE, message=FALSE}
+# Right of Way data cleanup
+row_data$Status <- as.factor(row_data$Status)
+row_data$`Work Group` <- as.factor(row_data$`Work Group`)
+row_data$Program <- as.factor(row_data$Program)
+row_data$`Failure Class` <- as.factor(row_data$`Failure Class`)
+row_data$Problem <- as.factor(row_data$Problem)
+row_data$`Meets Standard` <- as.factor(row_data$`Meets Standard`)
+
+row_data <- row_data %>% rename(duration = `Duration (hours)`)
+
+# Convert dates from characters to POSIX dates 
+row_data <- row_data %>% dplyr::mutate(`Report Date` = strptime(`Report Date`, "%m/%d/%Y"))
+
+# Expand the criteria
+row_data$`Meets Standard` <- dplyr::recode(row_data$`Meets Standard`, "1" = "Meets Standard") 
+row_data$`Meets Standard` <- dplyr::recode(row_data$`Meets Standard`, "0" = "Does Not Meet Standard") 
+row_data$`Meets Standard` <- dplyr::recode(row_data$`Meets Standard`, "-1" = "Excluded from Standard") 
+
+cols_to_keep <- c("Status", "Work Group", "Program", "Failure Class", "Problem", "Meets Standard", "Report Date", "duration")
+row_data <- row_data %>% select(one_of(cols_to_keep))
+
+
+row_data_gp <- ggplot(data = row_data, aes(x = `Work Group`, y = duration))
+row_data_gp <- row_data_gp + geom_boxplot(outlier.colour = "red", aes(color = `Meets Standard`))
+row_data_gp <- row_data_gp + labs(y = "Hours of Duration")
+print(row_data_gp)
+
+```
