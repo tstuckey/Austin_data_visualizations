@@ -235,7 +235,7 @@ fabric.properties
 
 
 # Data
-**/data
+# **/data
 **/my_data
 **/t_data
 **/t_queries
